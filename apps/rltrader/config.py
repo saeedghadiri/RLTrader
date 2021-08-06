@@ -1,5 +1,8 @@
-tickers = 'DOW30'
+TICKERS_GROUP = 'DOW30'
+START_DATE = '2016-01-01'
+END_DATE = '2021-01-01'
 
+##
 ALL_TICKERS = ['AMZN', 'MCD', 'DRI', 'F', 'ADM', 'COST', 'PEP', 'WMT', 'ABBV',
                'AMGN', 'COO', 'JNJ', 'AAL', 'CAT', 'EMR', 'ROP', 'AAPL', 'IBM',
                'MA', 'PYPL', 'COG', 'EOG', 'HP', 'XOM', 'AIG', 'BAC', 'JPM',
@@ -16,9 +19,9 @@ ALL_TICKERS = ['AMZN', 'MCD', 'DRI', 'F', 'ADM', 'COST', 'PEP', 'WMT', 'ABBV',
 DOW_30_TICKERS = ['AAPL', 'MSFT', 'JPM', 'V', 'RTX', 'PG', 'GS', 'NKE', 'DIS', 'AXP', 'HD', 'INTC', 'WMT', 'IBM', 'MRK',
                   'UNH', 'KO', 'CAT', 'TRV', 'JNJ', 'CVX', 'MCD', 'VZ', 'CSCO', 'XOM', 'BA', 'MMM', 'PFE', 'WBA', 'DD']
 
-if tickers == 'ALL':
+if TICKERS_GROUP == 'ALL':
     TICKERS = ALL_TICKERS
-elif tickers == 'DOW30':
+elif TICKERS_GROUP == 'DOW30':
     TICKERS = DOW_30_TICKERS
 
-DATA_PATH = '{}.pkl'.format(tickers)
+DATA_PATH = '{}.pkl'.format(TICKERS_GROUP)
