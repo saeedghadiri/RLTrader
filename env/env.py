@@ -20,6 +20,7 @@ class StockTradingEnv(gym.Env):
 
     def __init__(self,
                  df,
+                 data,
                  stock_dim,
                  initial_asset,
                  reward_scaling,
@@ -30,6 +31,7 @@ class StockTradingEnv(gym.Env):
                  model_name=''):
 
         self.df = df
+        self.data = data
         self.stock_dim = stock_dim
 
         self.initial_asset = initial_asset
@@ -53,7 +55,7 @@ class StockTradingEnv(gym.Env):
         self.asset = None
         self.day = None
         self.total_days = None
-        self.data = None
+        self.df_today = None
         self.terminal = None
         self.reward = None
         self.cost = None
@@ -71,9 +73,9 @@ class StockTradingEnv(gym.Env):
 
         self.day += 1
         self.terminal = self.day >= self.total_days
-        self.data = self.df.loc[self.day, :]
+        self.df_today = self.df.loc[self.day, :]
 
-        asset = np.sum(np.array(actions)[:self.stock_dim] * self.asset * self.data.close_pct_change.values) + \
+        asset = np.sum(np.array(actions)[:self.stock_dim] * self.asset * self.df_today.close_pct_change.values) + \
                 actions[-1] * self.asset
 
         self.reward = (asset / self.asset - 1) * self.reward_scaling
@@ -99,7 +101,7 @@ class StockTradingEnv(gym.Env):
 
         self.day = 0
         self.total_days = len(self.df.index.unique()) - 1
-        self.data = self.df.loc[self.day, :]
+        self.df_today = self.df.loc[self.day, :]
         self.cost = 0
         self.trades = 0
         self.terminal = False
@@ -160,14 +162,15 @@ class StockTradingEnv(gym.Env):
         self.portfo = list(self.portfo)
 
     def _update_state(self):
+        ind = self.df_today['ind']
 
-        state = self.portfo + self.data[self.features].values.ravel().tolist()
+        state = [self.portfo, self.data[ind, :]]
 
         return state
 
     def _get_date(self):
 
-        date = self.data.date.unique()[0]
+        date = self.df_today.date.unique()[0]
 
         return date
 
@@ -188,7 +191,7 @@ class StockTradingEnv(gym.Env):
 
         action_list = self.actions_memory
         df_actions = pd.DataFrame(action_list)
-        df_actions.columns = self.data.tic.values.tolist() + ['cash']
+        df_actions.columns = self.df_today.tic.values.tolist() + ['cash']
         df_actions.index = df_date.date
         # df_actions = pd.DataFrame({'date':date_list,'actions':action_list})
 

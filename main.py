@@ -1,25 +1,29 @@
 from preprocessor.yahoodownloader import YahooDownloader
-from preprocessor.preprocessors import data_split
+from preprocessor.preprocessors import data_split, create_data
 from apps.rltrader import config
 import pandas as pd
 import os.path
 from env.env import StockTradingEnv
 import numpy as np
+from datetime import datetime, timedelta
 
 if __name__ == '__main__':
 
     if not os.path.exists(config.DATA_PATH):
-        df = YahooDownloader(start_date=config.START_DATE, end_date=config.END_DATE,
+        start_date_download = datetime.strptime(config.START_DATE, '%Y-%m-%d') - timedelta(days=70)
+        df = YahooDownloader(start_date=start_date_download, end_date=config.END_DATE,
                              ticker_list=config.TICKERS).fetch_data()
         df.to_pickle(config.DATA_PATH)
     else:
         df = pd.read_pickle(config.DATA_PATH)
 
     del df['day']
-    df = data_split(df, config.START_DATE, config.END_DATE)
+    features = ['open', 'high', 'low', 'close']
+
+    df, data = create_data(df, features, sequence_length=5)
+    df, data = data_split(df, data, config.START_DATE, config.END_DATE)
     df['close_pct_change'] = df.groupby('tic')['close'].pct_change() + 1
 
-    features = ['open', 'high', 'low', 'close']
     env_kwargs = {
 
         "initial_asset": 1000000,
@@ -32,7 +36,9 @@ if __name__ == '__main__':
 
     }
 
-    e_train_gym = StockTradingEnv(df=df, **env_kwargs)
+    e_train_gym = StockTradingEnv(df=df, data=data, **env_kwargs)
+
+    tic = datetime.now()
     for episode in range(100):
         e_train_gym.reset()
         terminal = False
@@ -42,3 +48,5 @@ if __name__ == '__main__':
             actions = actions / sum(actions)
             actions = list(actions)
             state, reward, terminal, _ = e_train_gym.step(actions)
+
+    print(datetime.now() - tic)
