@@ -1,5 +1,5 @@
 from preprocessor.yahoodownloader import YahooDownloader
-from preprocessor.preprocessors import data_split, create_data
+from preprocessor.preprocessors import data_split, FeatureEngineer
 from apps.rltrader import config
 import pandas as pd
 import os.path
@@ -7,22 +7,18 @@ from env.env import StockTradingEnv
 import numpy as np
 from datetime import datetime, timedelta
 
+features = ['open', 'high', 'low', 'close']
+
 if __name__ == '__main__':
 
-    if not os.path.exists(config.DATA_PATH):
-        start_date_download = datetime.strptime(config.START_DATE, '%Y-%m-%d') - timedelta(days=70)
-        df = YahooDownloader(start_date=start_date_download, end_date=config.END_DATE,
-                             ticker_list=config.TICKERS).fetch_data()
-        df.to_pickle(config.DATA_PATH)
-    else:
-        df = pd.read_pickle(config.DATA_PATH)
+    start_date_download = datetime.strptime(config.START_DATE, '%Y-%m-%d') - timedelta(days=100)
+    df = YahooDownloader(start_date=start_date_download, end_date=config.END_DATE,
+                         ticker_list=config.TICKERS, data_path=config.DATA_PATH).fetch_data()
 
-    del df['day']
-    features = ['open', 'high', 'low', 'close']
+    fe = FeatureEngineer(features, sequence_length=5)
+    df, data = fe.create_data(df)
 
-    df, data = create_data(df, features, sequence_length=5)
     df, data = data_split(df, data, config.START_DATE, config.END_DATE)
-    df['close_pct_change'] = df.groupby('tic')['close'].pct_change() + 1
 
     env_kwargs = {
 

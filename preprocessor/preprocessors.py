@@ -18,6 +18,8 @@ def data_split(df, data, start, end):
 
     df['ind'] = np.arange(len(df))
 
+    # this needs to be calculated for price changes
+    df['close_pct_change'] = df.groupby('tic')['close'].pct_change() + 1
     return df, data
 
 
@@ -26,6 +28,50 @@ def convert_to_datetime(time):
     if isinstance(time, str):
         return datetime.datetime.strptime(time, time_fmt)
 
+
+def _2d_to_3d(X, n_steps=10):
+    _X = np.zeros((X.shape[0], n_steps, X.shape[1])) * np.nan
+    for i in range(n_steps - 1, len(X)):
+        _X[i, :] = X[i - n_steps + 1: i + 1]
+    return _X
+
+
+class FeatureEngineer:
+    def __init__(self, features, sequence_length):
+        self.features = features
+        self.sequence_length = sequence_length
+        pass
+
+    def create_data(self, df_input):
+        df = df_input.copy()
+        df['day'] = df.date.factorize()[0]
+        df = df.reset_index(drop=True)
+        # drop before start date for each tic
+        # ind_first = df.groupby('tic')[features].agg(lambda x: x.first_valid_index()).max(axis=1).astype(int)
+        # ind_first = pd.Series(data=df.loc[ind_first, 'ind_matlab_date'].values, index=ind_first.index.values)
+
+        # df = df.groupby('tic').apply(lambda x: x.loc[x['day'] >= ind_first.loc[x.name]]).reset_index(drop=True)
+
+        df = df.sort_values(by=['tic', 'day']).reset_index(drop=True)
+
+        # convert data to 3d
+        data = []
+        for tic in df['tic'].unique():
+            data.append(_2d_to_3d(df.loc[df['tic'] == tic, self.features].values, self.sequence_length))
+
+        # concatenate data
+        data = np.concatenate(data)
+
+        # sort by time
+        df = df.sort_values(by=['day', 'tic'])
+        data = data[df.index, :, :]
+        df = df.reset_index(drop=True)
+
+        df['ind'] = np.arange(len(df))
+
+        del df['day']
+
+        return df, data
 
 # class FeatureEngineer:
 #     """Provides methods for preprocessing the stock price data
@@ -237,47 +283,3 @@ def convert_to_datetime(time):
 #             {"date": df_price_pivot.index, "turbulence": turbulence_index}
 #         )
 #         return turbulence_index
-
-
-# these co_ids are either gold funds or ignored stocks
-# co_id 47 belongs to hekmat
-co_id_ignored = [47, 55, 423, 454, 455, 456]
-
-
-def create_data(df_input, features, sequence_length=5):
-    df = df_input.copy()
-    df['day'] = df.date.factorize()[0]
-    df = df.reset_index(drop=True)
-    # drop before start date for each tic
-    # ind_first = df.groupby('tic')[features].agg(lambda x: x.first_valid_index()).max(axis=1).astype(int)
-    # ind_first = pd.Series(data=df.loc[ind_first, 'ind_matlab_date'].values, index=ind_first.index.values)
-
-    # df = df.groupby('tic').apply(lambda x: x.loc[x['day'] >= ind_first.loc[x.name]]).reset_index(drop=True)
-
-    df = df.sort_values(by=['tic', 'day']).reset_index(drop=True)
-
-    # convert data to 3d
-    data = []
-    for tic in df['tic'].unique():
-        data.append(_2d_to_3d(df.loc[df['tic'] == tic, features].values, sequence_length))
-
-    # concatenate data
-    data = np.concatenate(data)
-
-    # sort by time
-    df = df.sort_values(by=['day', 'tic'])
-    data = data[df.index, :, :]
-    df = df.reset_index(drop=True)
-
-    df['ind'] = np.arange(len(df))
-
-    del df['day']
-
-    return df, data
-
-
-def _2d_to_3d(X, n_steps=10):
-    _X = np.zeros((X.shape[0], n_steps, X.shape[1])) * np.nan
-    for i in range(n_steps - 1, len(X)):
-        _X[i, :] = X[i - n_steps + 1: i + 1]
-    return _X

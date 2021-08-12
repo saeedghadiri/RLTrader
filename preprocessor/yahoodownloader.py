@@ -4,6 +4,7 @@ Yahoo Finance API
 
 import pandas as pd
 import yfinance as yf
+import os
 
 
 class YahooDownloader:
@@ -23,11 +24,12 @@ class YahooDownloader:
         Fetches data from yahoo API
     """
 
-    def __init__(self, start_date: str, end_date: str, ticker_list: list):
+    def __init__(self, start_date: str, end_date: str, ticker_list: list, data_path):
 
         self.start_date = start_date
         self.end_date = end_date
         self.ticker_list = ticker_list
+        self.data_path = data_path
 
     def fetch_data(self) -> pd.DataFrame:
         """Fetches data from Yahoo API
@@ -39,6 +41,13 @@ class YahooDownloader:
             7 columns: A date, open, high, low, close, volume and tick symbol
             for the specified stock ticker
         """
+
+        # if we already downloaded the file, we use our local cache
+        if os.path.exists(self.data_path):
+            df = pd.read_pickle(self.data_path)
+            del df['day']
+            return df
+
         # Download and save the data in a pandas DataFrame:
         data_df = pd.DataFrame()
         for tic in self.ticker_list:
@@ -76,8 +85,10 @@ class YahooDownloader:
         print("Shape of DataFrame: ", data_df.shape)
         # print("Display DataFrame: ", data_df.head())
 
-        data_df = data_df.sort_values(by=['date','tic']).reset_index(drop=True)
+        data_df = data_df.sort_values(by=['date', 'tic']).reset_index(drop=True)
 
+        data_df.to_pickle(self.data_path)
+        del data_df['day']
         return data_df
 
     def select_equal_rows_stock(self, df):
