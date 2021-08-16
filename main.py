@@ -1,9 +1,7 @@
-from preprocessor.yahoodownloader import YahooDownloader
-from preprocessor.preprocessors import data_split, FeatureEngineer
-from apps.rltrader import config
-import pandas as pd
-import os.path
-from env.env import StockTradingEnv
+from RLTrader.preprocessor.yahoodownloader import YahooDownloader
+from RLTrader.preprocessor.preprocessors import data_split, FeatureEngineer
+from RLTrader.apps.rltrader import config
+from RLTrader.env.env import StockTradingEnv
 import numpy as np
 from datetime import datetime, timedelta
 
@@ -28,8 +26,6 @@ if __name__ == '__main__':
         "action_dim": len(config.TICKERS) + 1,
         "features": features,
         "reward_scaling": 100,
-        "model_name": 'mamad'
-
     }
 
     e_train_gym = StockTradingEnv(df=df, data=data, **env_kwargs)
