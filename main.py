@@ -1,34 +1,28 @@
-from RLTrader.preprocessor.yahoodownloader import YahooDownloader
-from RLTrader.preprocessor.preprocessors import data_split, FeatureEngineer
 from RLTrader.apps.rltrader import config
 from RLTrader.env.env import StockTradingEnv
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 
 features = ['open', 'high', 'low', 'close']
 
 if __name__ == '__main__':
 
-    start_date_download = datetime.strptime(config.START_DATE, '%Y-%m-%d') - timedelta(days=100)
-    df = YahooDownloader(start_date=start_date_download, end_date=config.END_DATE,
-                         ticker_list=config.TICKERS, data_path=config.DATA_PATH).fetch_data()
-
-    fe = FeatureEngineer(features, sequence_length=5)
-    df, data = fe.create_data(df)
-
-    df, data = data_split(df, data, config.START_DATE, config.END_DATE)
-
     env_kwargs = {
 
         "initial_asset": 1000000,
         "stock_dim": len(config.TICKERS),
-        "state_dim": len(config.TICKERS) * len(features) + len(config.TICKERS) + 1,
+        "state_dim": (len(config.TICKERS), config.SEQUENCE, len(features)),
         "action_dim": len(config.TICKERS) + 1,
         "features": features,
         "reward_scaling": 100,
+        "start_date": config.START_DATE,
+        "end_date": config.END_DATE,
+        "data_path": config.DATA_PATH,
+        "sequence": config.SEQUENCE,
+        "tickers": config.TICKERS,
     }
 
-    e_train_gym = StockTradingEnv(df=df, data=data, **env_kwargs)
+    e_train_gym = StockTradingEnv(**env_kwargs)
 
     tic = datetime.now()
     for episode in range(100):

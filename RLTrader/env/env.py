@@ -4,13 +4,11 @@ from gym.utils import seeding
 import gym
 from gym import spaces
 import matplotlib
-
+from datetime import datetime, timedelta
+from RLTrader.preprocessor.yahoodownloader import YahooDownloader
+from RLTrader.preprocessor.preprocessors import data_split, FeatureEngineer
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import pickle
-
-
-# from stable_baselines3.common.vec_env import DummyVecEnv
 
 
 class StockTradingEnv(gym.Env):
@@ -19,19 +17,20 @@ class StockTradingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self,
-                 df,
-                 data,
                  stock_dim,
                  initial_asset,
                  reward_scaling,
                  state_dim,
                  action_dim,
                  features,
+                 start_date,
+                 end_date,
+                 data_path,
+                 sequence,
+                 tickers,
                  print_verbosity=10,
                  model_name=''):
 
-        self.df = df
-        self.data = data
         self.stock_dim = stock_dim
 
         self.initial_asset = initial_asset
@@ -39,9 +38,21 @@ class StockTradingEnv(gym.Env):
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.features = features
+        start_date_download = datetime.strptime(start_date, '%Y-%m-%d') - timedelta(days=100)
+        df = YahooDownloader(start_date=start_date_download, end_date=end_date,
+                             ticker_list=tickers, data_path=data_path).fetch_data()
+
+        fe = FeatureEngineer(features, sequence_length=sequence)
+        df, data = fe.create_data(df)
+
+        df, data = data_split(df, data, start_date, end_date)
+
+        self.df = df
+        self.data = data
+
+        self.observation_space = spaces.Dict({"market": spaces.Box(low=0, high=np.inf, shape=self.state_dim),
+                                              'portfo': spaces.Box(low=0, high=1, shape=(self.action_dim,))})
         self.action_space = spaces.Box(low=0, high=1, shape=(self.action_dim,))
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.state_dim,))
 
         self.print_verbosity = print_verbosity
 
@@ -165,6 +176,9 @@ class StockTradingEnv(gym.Env):
         ind = self.df_today['ind']
 
         state = [self.portfo, self.data[ind, :]]
+        # state = {'market': self.data[ind, :], 'portfo': self.portfo}
+
+        # state = {'market': self.data[ind, :].transpose(2, 0, 1), 'portfo': self.portfo}
 
         return state
 
