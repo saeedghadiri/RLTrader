@@ -7,6 +7,7 @@ import matplotlib
 from datetime import datetime, timedelta
 from RLTrader.preprocessor.yahoodownloader import YahooDownloader
 from RLTrader.preprocessor.preprocessors import data_split, FeatureEngineer
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -174,8 +175,16 @@ class StockTradingEnv(gym.Env):
 
     def _update_state(self):
         ind = self.df_today['ind']
+        d_data = self.data[ind, :]
 
-        state = [self.portfo, self.data[ind, :]]
+        # for lstm
+        d_data = d_data.transpose(1, 0, 2).reshape(d_data.shape[1], -1)
+        portfo = np.array(self.portfo)
+
+        # d_data = d_data[np.newaxis, ...]
+        # portfo = portfo[np.newaxis, ...]
+
+        state = [d_data, portfo]
         # state = {'market': self.data[ind, :], 'portfo': self.portfo}
 
         # state = {'market': self.data[ind, :].transpose(2, 0, 1), 'portfo': self.portfo}

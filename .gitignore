@@ -1,5 +1,7 @@
 venv/
 results/
+checkpoints/
+logs/
 .idea/
 *.pyc
 *.pkl

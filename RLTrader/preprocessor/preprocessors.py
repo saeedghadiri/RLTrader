@@ -54,10 +54,20 @@ class FeatureEngineer:
 
         df = df.sort_values(by=['tic', 'day']).reset_index(drop=True)
 
+        features = []
+        for f in self.features:
+            if 'price' in f:
+                feature = f.replace('_price', '')
+                df[feature + '_pct'] = df.groupby('tic')[feature].pct_change()
+                features.append(feature + '_pct')
+
+        if len(features) > 0:
+            df[features] = df[features] / df[features].std().mean()
+
         # convert data to 3d
         data = []
         for tic in df['tic'].unique():
-            data.append(_2d_to_3d(df.loc[df['tic'] == tic, self.features].values, self.sequence_length))
+            data.append(_2d_to_3d(df.loc[df['tic'] == tic, features].values, self.sequence_length))
 
         # concatenate data
         data = np.concatenate(data)

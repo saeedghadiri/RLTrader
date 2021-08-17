@@ -1,6 +1,6 @@
 from tensorflow.keras.initializers import glorot_normal
 
-TICKERS_GROUP = 'DOW30'
+TICKERS_GROUP = 'DOW10'
 START_DATE = '2016-01-01'
 END_DATE = '2021-01-01'
 SEQUENCE = 5
@@ -19,13 +19,17 @@ UNBALANCE_P = 0.8  # newer entries are prioritized
 BUFFER_UNBALANCE_GAP = 0.5
 
 # training parameters
-STD_DEV = 0.2
+STD_NOISE = 0.1
 BATCH_SIZE = 200
-BUFFER_SIZE = 1e6
-TOTAL_EPISODES = 10000
+BUFFER_SIZE = 20000
+TOTAL_EPISODES = 200
 CRITIC_LR = 1e-3
 ACTOR_LR = 1e-4
-WARM_UP = 1  # num of warm up epochs
+
+RENDER_ENV = False
+SAVE_WEIGHTS = True
+LOAD_LAST = False
+EPS_GREEDY = True
 
 ##
 ALL_TICKERS = ['AMZN', 'MCD', 'DRI', 'F', 'ADM', 'COST', 'PEP', 'WMT', 'ABBV',
@@ -48,5 +52,7 @@ if TICKERS_GROUP == 'ALL':
     TICKERS = ALL_TICKERS
 elif TICKERS_GROUP == 'DOW30':
     TICKERS = DOW_30_TICKERS
+elif TICKERS_GROUP == 'DOW10':
+    TICKERS = DOW_30_TICKERS[:10]
 
 DATA_PATH = '{}.pkl'.format(TICKERS_GROUP)
