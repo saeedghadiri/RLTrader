@@ -92,7 +92,6 @@ if __name__ == '__main__':
         avg_reward_list.append(avg_reward)
 
         # print the average reward
-        print(avg_reward)
         tensorboard(ep, acc_reward, actions_squared, Q_loss, A_loss)
 
         # save weights
@@ -107,10 +106,6 @@ if __name__ == '__main__':
 
     # Plotting graph
     # Episodes versus Avg. Rewards
-    plt.plot(avg_reward_list)
-    plt.xlabel("Episode")
-    plt.ylabel("Avg. Epsiodic Reward")
-    plt.show()
 
     # tic = datetime.now()
     # for episode in range(100):

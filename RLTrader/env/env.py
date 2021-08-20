@@ -7,6 +7,9 @@ import matplotlib
 from datetime import datetime, timedelta
 from RLTrader.preprocessor.yahoodownloader import YahooDownloader
 from RLTrader.preprocessor.preprocessors import data_split, FeatureEngineer
+from RLTrader.apps.rltrader.config import ALL_TICKERS
+import os
+from itertools import product
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -26,8 +29,8 @@ class StockTradingEnv(gym.Env):
                  features,
                  start_date,
                  end_date,
-                 data_path,
                  sequence,
+                 data_path,
                  tickers,
                  print_verbosity=10,
                  model_name=''):
@@ -39,9 +42,31 @@ class StockTradingEnv(gym.Env):
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        start_date_download = datetime.strptime(start_date, '%Y-%m-%d') - timedelta(days=100)
-        df = YahooDownloader(start_date=start_date_download, end_date=end_date,
-                             ticker_list=tickers, data_path=data_path).fetch_data()
+        if type(start_date) is str:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+        # if we already downloaded the file, we use our local cache
+        if os.path.exists(data_path):
+            df = pd.read_pickle(data_path)
+        else:
+            df = YahooDownloader(start_date="2012-01-01", end_date="2021-08-10",
+                                 ticker_list=ALL_TICKERS).fetch_data()
+            del df['day']
+            df.to_pickle(data_path)
+
+        df = df[df.tic.isin(tickers)]
+        start_date_temp = start_date - timedelta(days=100 + sequence)
+
+        df = df[(df.date >= start_date_temp) & (df.date <= end_date)]
+
+        # check whether every date for every ticker exists
+        df_check = pd.DataFrame(product(tickers, df['date'].unique()))
+        df_check.columns = ['tic', 'date']
+        df_check['dummy'] = True
+        df_check = pd.merge(df, df_check, on=['tic', 'date'])
+        assert pd.isna(df_check['dummy']).any()
+        del df_check
 
         fe = FeatureEngineer(features, sequence_length=sequence)
         df, data = fe.create_data(df)
@@ -90,7 +115,7 @@ class StockTradingEnv(gym.Env):
         asset = np.sum(np.array(actions)[:self.stock_dim] * self.asset * self.df_today.close_pct_change.values) + \
                 actions[-1] * self.asset
 
-        self.reward = (asset / self.asset - 1) * self.reward_scaling
+        self.reward = ((asset / self.asset) / self.df_today.close_pct_change.values.mean() - 1) * self.reward_scaling
 
         self.portfo = actions
 
