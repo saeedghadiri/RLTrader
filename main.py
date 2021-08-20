@@ -30,6 +30,24 @@ if __name__ == '__main__':
     }
 
     env = StockTradingEnv(**env_kwargs)
+
+    env_kwargs = {
+
+        "initial_asset": 1000000,
+        "stock_dim": len(config.TICKERS),
+        "state_dim": (config.SEQUENCE, len(features) * len(config.TICKERS)),
+        "action_dim": len(config.TICKERS) + 1,
+        "features": features,
+        "reward_scaling": 100,
+        "start_date": '2019-01-02',
+        "end_date": '2021-08-01',
+        "data_path": config.DATA_PATH,
+        "sequence": config.SEQUENCE,
+        "tickers": config.TICKERS,
+    }
+
+    env_test = StockTradingEnv(**env_kwargs)
+
     brain = Brain(env.observation_space, env.action_space)
 
     tensorboard = Tensorboard(log_dir=TF_LOG_DIR)
@@ -41,7 +59,7 @@ if __name__ == '__main__':
 
     # all the metrics
     acc_reward = tf.keras.metrics.Sum('reward', dtype=tf.float32)
-    actions_squared = tf.keras.metrics.Mean('actions', dtype=tf.float32)
+    test_reward = tf.keras.metrics.Sum('test_reward', dtype=tf.float32)
     Q_loss = tf.keras.metrics.Mean('Q_loss', dtype=tf.float32)
     A_loss = tf.keras.metrics.Mean('A_loss', dtype=tf.float32)
 
@@ -58,11 +76,13 @@ if __name__ == '__main__':
         print(ep)
         prev_state = env.reset()
         acc_reward.reset_states()
-        actions_squared.reset_states()
+        test_reward.reset_states()
         Q_loss.reset_states()
         A_loss.reset_states()
 
-        for _ in range(2000):
+        done = False
+
+        while not done:
             if RENDER_ENV:  # render the environment into GUI
                 env.render()
 
@@ -80,11 +100,15 @@ if __name__ == '__main__':
 
             # post update for next step
             acc_reward(reward)
-            actions_squared(0)
+
             prev_state = state
 
-            if done:
-                break
+        prev_state = env_test.reset()
+        done = False
+        while not done:
+            cur_act = brain.act(prev_state, _notrandom=random.random() < ep / TOTAL_EPISODES, noise=True)
+            state, reward, done, _ = env_test.step(cur_act)
+            test_reward(reward)
 
         ep_reward_list.append(acc_reward.result().numpy())
         # Mean of last 40 episodes
@@ -92,12 +116,11 @@ if __name__ == '__main__':
         avg_reward_list.append(avg_reward)
 
         # print the average reward
-        tensorboard(ep, acc_reward, actions_squared, Q_loss, A_loss)
+        tensorboard(ep, acc_reward, test_reward, Q_loss, A_loss, brain.buffer.get_buffer_size())
 
         # save weights
         if ep % 5 == 0 and SAVE_WEIGHTS:
             brain.save_weights(CHECKPOINTS_PATH)
-        print(brain.buffer.get_buffer_size())
         print(datetime.now() - tic)
 
     brain.save_weights(CHECKPOINTS_PATH)

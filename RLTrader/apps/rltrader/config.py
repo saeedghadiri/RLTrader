@@ -1,8 +1,8 @@
 from tensorflow.keras.initializers import glorot_normal
 
 TICKERS_GROUP = 'DOW10'
-START_DATE = '2016-01-01'
-END_DATE = '2021-01-01'
+START_DATE = '2015-01-01'
+END_DATE = '2019-01-01'
 SEQUENCE = 5
 # general parameters
 CHECKPOINTS_PATH = "checkpoints/DDPG_"
