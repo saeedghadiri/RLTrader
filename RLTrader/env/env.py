@@ -33,7 +33,8 @@ class StockTradingEnv(gym.Env):
                  data_path,
                  tickers,
                  print_verbosity=10,
-                 model_name=''):
+                 model_name='',
+                 test_env=False):
 
         self.stock_dim = stock_dim
 
@@ -41,6 +42,7 @@ class StockTradingEnv(gym.Env):
         self.reward_scaling = reward_scaling
         self.state_dim = state_dim
         self.action_dim = action_dim
+        self.test_env = test_env
 
         if type(start_date) is str:
             start_date = datetime.strptime(start_date, '%Y-%m-%d')
@@ -92,6 +94,7 @@ class StockTradingEnv(gym.Env):
         # initialize
         self.asset = None
         self.day = None
+        self.stop_day = None
         self.total_days = None
         self.df_today = None
         self.terminal = None
@@ -138,8 +141,14 @@ class StockTradingEnv(gym.Env):
         self.asset = self.initial_asset
         self.asset_memory = [self.asset]
 
-        self.day = 0
         self.total_days = len(self.df.index.unique()) - 1
+        if self.test_env:
+            self.day = 0
+            self.stop_day = self.total_days
+        else:
+            self.day = np.random.randint(0, self.total_days - 100)
+            self.stop_day = self.day + 100
+
         self.df_today = self.df.loc[self.day, :]
         self.cost = 0
         self.trades = 0

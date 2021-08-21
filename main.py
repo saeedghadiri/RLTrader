@@ -27,6 +27,7 @@ if __name__ == '__main__':
         "data_path": config.DATA_PATH,
         "sequence": config.SEQUENCE,
         "tickers": config.TICKERS,
+        "test_env": False
     }
 
     env = StockTradingEnv(**env_kwargs)
@@ -44,6 +45,7 @@ if __name__ == '__main__':
         "data_path": config.DATA_PATH,
         "sequence": config.SEQUENCE,
         "tickers": config.TICKERS,
+        "test_env": True
     }
 
     env_test = StockTradingEnv(**env_kwargs)
@@ -106,7 +108,7 @@ if __name__ == '__main__':
         prev_state = env_test.reset()
         done = False
         while not done:
-            cur_act = brain.act(prev_state, _notrandom=random.random() < ep / TOTAL_EPISODES, noise=True)
+            cur_act = brain.act(prev_state, _notrandom=True, noise=False)
             state, reward, done, _ = env_test.step(cur_act)
             test_reward(reward)
 

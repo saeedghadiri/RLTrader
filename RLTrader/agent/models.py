@@ -24,7 +24,7 @@ def ActorNetwork(state_space, num_actions):
 
     inputs_market = tf.keras.layers.Input(shape=state_space[0], dtype=tf.float32)
 
-    out_market = tf.keras.layers.LSTM(units=20)(inputs_market)
+    out_market = tf.keras.layers.LSTM(units=10)(inputs_market)
     out_market = tf.keras.layers.BatchNormalization()(out_market)
     out_market = tf.keras.activations.relu(out_market)
 
@@ -34,7 +34,7 @@ def ActorNetwork(state_space, num_actions):
     out_portfo = tf.keras.activations.relu(out_portfo)
 
     out = tf.keras.layers.Concatenate()([out_market, out_portfo])
-    out = tf.keras.layers.Dense(100, activation='relu', kernel_initializer=KERNEL_INITIALIZER)(out)
+    out = tf.keras.layers.Dense(50, activation='relu', kernel_initializer=KERNEL_INITIALIZER)(out)
     outputs = tf.keras.layers.Dense(num_actions, activation="softmax")(out)
 
     model = tf.keras.Model([inputs_market, inputs_portfo], outputs)
@@ -56,7 +56,7 @@ def CriticNetwork(state_space, num_actions):
     # State as input
     inputs_market = tf.keras.layers.Input(shape=state_space[0], dtype=tf.float32)
 
-    out_market = tf.keras.layers.LSTM(units=20)(inputs_market)
+    out_market = tf.keras.layers.LSTM(units=10)(inputs_market)
     out_market = tf.keras.layers.BatchNormalization()(out_market)
     out_market = tf.keras.activations.relu(out_market)
 
@@ -69,15 +69,15 @@ def CriticNetwork(state_space, num_actions):
 
     # Action as input
     action_input = tf.keras.layers.Input(shape=(num_actions), dtype=tf.float32)
-    action_out = tf.keras.layers.Dense(40, activation=tf.nn.leaky_relu,
+    action_out = tf.keras.layers.Dense(30, activation=tf.nn.leaky_relu,
                                        kernel_initializer=KERNEL_INITIALIZER)(
         action_input / 1)
 
-    # Both are passed through seperate layer before concatenating
+    # Both are passed through separate layer before concatenating
     added = tf.keras.layers.Add()([state_out, action_out])
 
     added = tf.keras.layers.BatchNormalization()(added)
-    outs = tf.keras.layers.Dense(150, activation=tf.nn.leaky_relu,
+    outs = tf.keras.layers.Dense(70, activation=tf.nn.leaky_relu,
                                  kernel_initializer=KERNEL_INITIALIZER)(added)
     outs = tf.keras.layers.BatchNormalization()(outs)
     outputs = tf.keras.layers.Dense(1, kernel_initializer=last_init)(outs)
@@ -152,7 +152,9 @@ class Brain:
             """
             with tf.GradientTape() as tape:
                 # define target
-                y = r + self.gamma * (1 - d) * self.critic_target([sn_0, sn_1, self.actor_target([sn_0, sn_1])])
+                # y = r + self.gamma * (1 - d) * self.critic_target([sn_0, sn_1, self.actor_target([sn_0, sn_1])])
+                # because we dont have a terminal state
+                y = r + self.gamma * self.critic_target([sn_0, sn_1, self.actor_target([sn_0, sn_1])])
                 # define the delta Q
                 critic_loss = tf.math.reduce_mean(tf.math.abs(y - self.critic_network([s_0, s_1, a])))
             critic_grad = tape.gradient(critic_loss, self.critic_network.trainable_variables)
