@@ -305,11 +305,11 @@ class Agent:
                 prev_state = state
 
             # perform one iteration on test environment
-            prev_state = self.env_test.reset()
+            state = self.env_test.reset()
             done = False
             all_action = []
             while not done:
-                cur_act = self.brain.act(prev_state, _notrandom=True, noise=False)
+                cur_act = self.brain.act(state, _notrandom=True, noise=False)
                 state, reward, done, _ = self.env_test.step(cur_act)
                 test_reward(reward)
                 all_action.append(cur_act)

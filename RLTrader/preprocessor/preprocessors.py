@@ -60,7 +60,7 @@ class FeatureEngineer:
             if 'price' in f:
                 feature = f.replace('_price', '')
                 # df[feature + '_pct'] = df.groupby('tic')[feature].pct_change()
-                df[feature + '_pct'] = df[feature] / df['base_normal']
+                df[feature + '_pct'] = df[feature] / df['base_normal'] - 1
                 features.append(feature + '_pct')
 
         if len(features) > 0:

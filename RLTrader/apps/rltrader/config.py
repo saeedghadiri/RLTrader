@@ -9,7 +9,7 @@ CHECKPOINTS_PATH = "checkpoints/DDPG_"
 TF_LOG_DIR = './logs/DDPG/'
 
 # brain parameters
-GAMMA = 0.98  # for the temporal difference
+GAMMA = 0.99  # for the temporal difference
 RHO = 0.001  # to update the target networks
 KERNEL_INITIALIZER = glorot_normal()
 # KERNEL_INITIALIZER = tf.random_uniform_initializer(-1.5e-3, 1.5e-3)
@@ -19,9 +19,9 @@ UNBALANCE_P = 0.8  # newer entries are prioritized
 BUFFER_UNBALANCE_GAP = 0.5
 
 # training parameters
-STD_NOISE = 0.1
+STD_NOISE = 0.2
 BATCH_SIZE = 200
-BUFFER_SIZE = 20000
+BUFFER_SIZE = 30000
 TOTAL_EPISODES = 1000
 CRITIC_LR = 1e-3
 ACTOR_LR = 1e-4
