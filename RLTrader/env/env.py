@@ -181,7 +181,7 @@ class StockTradingEnv(gym.Env):
         df_rewards = pd.DataFrame(self.rewards_memory)
         df_rewards.columns = ['account_rewards']
         df_rewards['date'] = self.date_memory[:-1]
-        if self.episode % self.print_verbosity == 0:
+        if self.episode % self.print_verbosity == 0 and self.test_env:
             print(f"day: {self.day}, episode: {self.episode}")
             print(f"begin_total_asset: {self.asset_memory[0]:0.2f}")
             print(f"end_total_asset: {self.asset_memory[-1]:0.2f}")
