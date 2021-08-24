@@ -54,7 +54,7 @@ class Tensorboard:
         train_log_dir = log_dir + current_time + '/train'
         self.train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 
-    def __call__(self, epoch, reward, test_reward, Q_loss, A_loss, buffer_size):
+    def __call__(self, epoch, reward, test_reward, Q_loss, A_loss, profit, buffer_size):
         """
         Storing all relevant variables
         """
@@ -63,4 +63,5 @@ class Tensorboard:
             tf.summary.scalar('test reward', test_reward.result(), step=epoch)
             tf.summary.scalar('critic loss', Q_loss.result(), step=epoch)
             tf.summary.scalar('actor loss', A_loss.result(), step=epoch)
+            tf.summary.scalar('profit test', profit, step=epoch)
             tf.summary.scalar('buffer size', buffer_size, step=epoch)

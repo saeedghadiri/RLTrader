@@ -122,6 +122,7 @@ class StockTradingEnv(gym.Env):
 
         self.reward = ((asset / self.asset) / self.df_today.close_pct_change.values.mean() - 1) * self.reward_scaling
 
+        self.asset = asset
         self.portfo = actions
 
         self.state = self._update_state()
