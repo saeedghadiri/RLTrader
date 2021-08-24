@@ -4,7 +4,7 @@ from RLTrader.agent.models import Agent
 from RLTrader.apps.rltrader.config import TF_LOG_DIR, CHECKPOINTS_PATH, TOTAL_EPISODES, RENDER_ENV, SAVE_WEIGHTS, \
     LOAD_LAST, UNBALANCE_P
 import random
-import matplotlib.pyplot as plt
+
 import numpy as np
 import tensorflow as tf
 from datetime import datetime

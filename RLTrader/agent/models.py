@@ -1,3 +1,4 @@
+import pandas as pd
 import logging
 import os
 import numpy as np
@@ -5,11 +6,15 @@ import tensorflow as tf
 import random
 import gym
 from tqdm import trange
+import matplotlib
 import matplotlib.pyplot as plt
+import seaborn as sns
 from RLTrader.agent.buffer import ReplayBuffer
 from RLTrader.agent.utils import OUActionNoise, Tensorboard
 from RLTrader.apps.rltrader.config import KERNEL_INITIALIZER, GAMMA, RHO, STD_NOISE, BUFFER_SIZE, BATCH_SIZE, CRITIC_LR, \
     ACTOR_LR, TF_LOG_DIR, CHECKPOINTS_PATH, TOTAL_EPISODES, UNBALANCE_P, RENDER_ENV, SAVE_WEIGHTS, LOAD_LAST, EPS_GREEDY
+
+sns.set_style('darkgrid')
 
 
 def ActorNetwork(state_space, num_actions):
@@ -302,10 +307,16 @@ class Agent:
             # perform one iteration on test environment
             prev_state = self.env_test.reset()
             done = False
+            all_action = []
             while not done:
                 cur_act = self.brain.act(prev_state, _notrandom=True, noise=False)
                 state, reward, done, _ = self.env_test.step(cur_act)
                 test_reward(reward)
+                all_action.append(cur_act)
+
+            all_action = pd.DataFrame(all_action)
+            all_action.plot(figsize=(20, 7))
+            plt.savefig(os.path.join('test_trades.png'))
 
             # print the average reward
             tensorboard(ep, acc_reward, test_reward, Q_loss, A_loss,
