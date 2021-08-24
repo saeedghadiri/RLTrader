@@ -207,7 +207,7 @@ class StockTradingEnv(gym.Env):
                 index=False)
             plt.plot(self.asset_memory, 'r')
             plt.savefig('results/asset_value_{}_{}.png'.format(self.model_name, self.episode))
-            plt.close()
+            plt.clf()
 
     def _initiate_portfo(self):
         self.portfo = np.random.rand(self.action_dim)
