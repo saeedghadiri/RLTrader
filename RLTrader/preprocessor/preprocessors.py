@@ -54,11 +54,13 @@ class FeatureEngineer:
 
         df = df.sort_values(by=['tic', 'day']).reset_index(drop=True)
 
+        df['base_normal'] = df.groupby('tic')['close'].shift(1)
         features = []
         for f in self.features:
             if 'price' in f:
                 feature = f.replace('_price', '')
-                df[feature + '_pct'] = df.groupby('tic')[feature].pct_change()
+                # df[feature + '_pct'] = df.groupby('tic')[feature].pct_change()
+                df[feature + '_pct'] = df[feature] / df['base_normal']
                 features.append(feature + '_pct')
 
         if len(features) > 0:

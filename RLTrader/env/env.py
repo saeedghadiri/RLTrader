@@ -67,8 +67,8 @@ class StockTradingEnv(gym.Env):
         df_check.columns = ['tic', 'date']
         df_check['dummy'] = True
         df_check = pd.merge(df, df_check, on=['tic', 'date'])
-        # assert pd.isna(df_check['dummy']).any()
-        # assert pd.isna(df_check).any().any()
+        assert not pd.isna(df_check['dummy']).any()
+        assert not pd.isna(df_check).any().any()
         del df_check
 
         fe = FeatureEngineer(features, sequence_length=sequence)
@@ -121,6 +121,8 @@ class StockTradingEnv(gym.Env):
                 actions[-1] * self.asset
 
         self.reward = ((asset / self.asset) / self.df_today.close_pct_change.values.mean() - 1) * self.reward_scaling
+
+        self.reward = np.log(self.reward)
 
         self.asset = asset
         self.portfo = actions
