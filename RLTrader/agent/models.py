@@ -190,10 +190,9 @@ class Brain:
         if _notrandom:
             self.cur_action = self.actor_network(state_)[0].numpy()
         else:
-            noise = np.random.rand() * self.std_noise if noise else 0
-            self.cur_action = self.actor_network(state_)[0].numpy() + noise
-            if np.sum(self.cur_action < 0) > 0:
-                self.cur_action = self.cur_action + np.min(self.cur_action)
+            self.cur_action = self.actor_network(state_)[0].numpy()
+            noise_action = np.random.randn(len(self.cur_action)) * self.std_noise if noise else 0
+            self.cur_action = np.abs(self.cur_action + noise_action)
             self.cur_action = self.cur_action / np.sum(self.cur_action)
 
         return self.cur_action

@@ -19,7 +19,7 @@ UNBALANCE_P = 0.8  # newer entries are prioritized
 BUFFER_UNBALANCE_GAP = 0.5
 
 # training parameters
-STD_NOISE = 0.2
+STD_NOISE = 0.15
 BATCH_SIZE = 200
 BUFFER_SIZE = 30000
 TOTAL_EPISODES = 1000
