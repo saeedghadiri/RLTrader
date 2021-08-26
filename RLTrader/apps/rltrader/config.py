@@ -1,6 +1,6 @@
 from tensorflow.keras.initializers import glorot_normal
 
-TICKERS_GROUP = 'DOW10'
+TICKERS_GROUP = 'DOW4'
 START_DATE = '2015-01-01'
 END_DATE = '2019-01-01'
 SEQUENCE = 10
@@ -55,5 +55,7 @@ elif TICKERS_GROUP == 'DOW30':
     TICKERS = DOW_30_TICKERS
 elif TICKERS_GROUP == 'DOW10':
     TICKERS = DOW_30_TICKERS[:10]
+elif TICKERS_GROUP == 'DOW4':
+    TICKERS = DOW_30_TICKERS[:4]
 
 DATA_PATH = "data.pkl"

@@ -21,7 +21,7 @@ if __name__ == '__main__':
         "state_dim": (config.SEQUENCE, len(features) * len(config.TICKERS)),
         "action_dim": len(config.TICKERS) + 1,
         "features": features,
-        "reward_scaling": 1,
+        "reward_scaling": 100,
         "start_date": config.START_DATE,
         "end_date": config.END_DATE,
         "data_path": config.DATA_PATH,
@@ -39,4 +39,4 @@ if __name__ == '__main__':
 
     env_test = StockTradingEnv(**env_kwargs_test)
     agent = Agent(env, env_test)
-    agent.run()
+    agent.learn()

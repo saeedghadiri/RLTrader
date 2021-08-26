@@ -257,7 +257,7 @@ class Agent:
         self.env = env
         self.env_test = env_test
 
-    def run(self):
+    def learn(self):
 
         tensorboard = Tensorboard(log_dir=TF_LOG_DIR)
 
@@ -267,20 +267,14 @@ class Agent:
             self.brain.load_weights(CHECKPOINTS_PATH)
 
         # all the metrics
-        acc_reward = tf.keras.metrics.Sum('reward', dtype=tf.float32)
-        test_reward = tf.keras.metrics.Sum('test_reward', dtype=tf.float32)
-        Q_loss = tf.keras.metrics.Mean('Q_loss', dtype=tf.float32)
-        A_loss = tf.keras.metrics.Mean('A_loss', dtype=tf.float32)
+
+        q_loss = []
+        a_loss = []
 
         # run iteration
 
         for ep in range(TOTAL_EPISODES):
             prev_state = self.env.reset()
-            acc_reward.reset_states()
-            test_reward.reset_states()
-            Q_loss.reset_states()
-            A_loss.reset_states()
-
             done = False
 
             while not done:
@@ -296,31 +290,19 @@ class Agent:
                 # update weights
                 c, a = self.brain.learn(self.brain.buffer.get_batch(unbalance_p=UNBALANCE_P))
 
-                Q_loss(c)
-                A_loss(a)
-
-                # post update for next step
-                acc_reward(reward)
+                q_loss.append(c)
+                a_loss.append(a)
 
                 prev_state = state
 
-            # perform one iteration on test environment
-            state = self.env_test.reset()
-            done = False
-            all_action = []
-            while not done:
-                cur_act = self.brain.act(state, _notrandom=True, noise=False)
-                state, reward, done, _ = self.env_test.step(cur_act)
-                test_reward(reward)
-                all_action.append(cur_act)
+            # perform one evaluation on train and test environments
 
-            all_action = pd.DataFrame(all_action)
-            all_action.plot(figsize=(20, 7))
-            plt.savefig(os.path.join('test_trades.png'))
+            train_reward, _, train_asset = self.run(self.env, 'train_actions')
+            test_reward, _, test_asset = self.run(self.env_test, 'test_actions')
 
             # print the average reward
-            tensorboard(ep, acc_reward, test_reward, Q_loss, A_loss,
-                        (self.env_test.asset / self.env_test.initial_asset) - 1, self.brain.buffer.get_buffer_size())
+            tensorboard(ep, np.mean(train_reward), np.mean(test_reward), np.mean(q_loss), np.mean(a_loss),
+                        (test_asset / self.env.initial_asset) - 1, self.brain.buffer.get_buffer_size())
 
             # save weights
             if ep % 5 == 0 and SAVE_WEIGHTS:
@@ -329,3 +311,21 @@ class Agent:
         self.brain.save_weights(CHECKPOINTS_PATH)
 
         logging.info("Training done...")
+
+    def run(self, env, action_plot_name=None):
+        state = env.reset()
+        done = False
+        all_action = []
+        all_reward = []
+        while not done:
+            cur_act = self.brain.act(state, _notrandom=True, noise=False)
+            state, reward, done, _ = env.step(cur_act)
+            all_reward.append(reward)
+            all_action.append(cur_act)
+
+        if action_plot_name is not None:
+            all_action = pd.DataFrame(all_action)
+            all_action.plot(figsize=(20, 7))
+            plt.savefig(os.path.join('{}.png'.format(action_plot_name)))
+
+        return all_reward, all_action, env.asset

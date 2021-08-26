@@ -122,9 +122,9 @@ class StockTradingEnv(gym.Env):
 
         # self.reward = ((asset / self.asset) / self.df_today.close_pct_change.values.mean() - 1) * self.reward_scaling
 
-        self.reward = np.log((asset / self.asset) / self.df_today.close_pct_change.values.mean())
+        self.reward = np.log((asset / self.asset) / self.df_today.close_pct_change.values.mean()) * self.reward_scaling
 
-        # self.reward = np.log((asset / self.asset))
+        # self.reward = np.log((asset / self.asset)) * self.reward_scaling
 
         self.asset = asset
         self.portfo = actions

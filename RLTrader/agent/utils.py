@@ -59,9 +59,9 @@ class Tensorboard:
         Storing all relevant variables
         """
         with self.train_summary_writer.as_default():
-            tf.summary.scalar('reward', reward.result(), step=epoch)
-            tf.summary.scalar('test reward', test_reward.result(), step=epoch)
-            tf.summary.scalar('critic loss', Q_loss.result(), step=epoch)
-            tf.summary.scalar('actor loss', A_loss.result(), step=epoch)
+            tf.summary.scalar('reward', reward, step=epoch)
+            tf.summary.scalar('test reward', test_reward, step=epoch)
+            tf.summary.scalar('critic loss', Q_loss, step=epoch)
+            tf.summary.scalar('actor loss', A_loss, step=epoch)
             tf.summary.scalar('profit test', profit, step=epoch)
             tf.summary.scalar('buffer size', buffer_size, step=epoch)
