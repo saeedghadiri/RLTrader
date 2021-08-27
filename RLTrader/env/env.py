@@ -10,6 +10,7 @@ from RLTrader.preprocessor.preprocessors import data_split, FeatureEngineer
 from RLTrader.apps.rltrader.config import ALL_TICKERS
 import os
 from itertools import product
+from scipy.stats import entropy
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -125,6 +126,8 @@ class StockTradingEnv(gym.Env):
         self.reward = np.log((asset / self.asset) / self.df_today.close_pct_change.values.mean()) * self.reward_scaling
 
         # self.reward = np.log((asset / self.asset)) * self.reward_scaling
+
+        self.reward = self.reward - 0.5 * (1 - entropy(self.cur_action) / np.log(len(self.cur_action)))
 
         self.asset = asset
         self.portfo = actions
