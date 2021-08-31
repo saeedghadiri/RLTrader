@@ -127,7 +127,7 @@ class StockTradingEnv(gym.Env):
 
         # self.reward = np.log((asset / self.asset)) * self.reward_scaling
 
-        self.reward = self.reward - 0.5 * (1 - entropy(self.cur_action) / np.log(len(self.cur_action)))
+        self.reward = self.reward - 1 * (1 - entropy(actions) / np.log(len(actions)))
 
         self.asset = asset
         self.portfo = actions
