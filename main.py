@@ -29,14 +29,12 @@ if __name__ == '__main__':
         "end_date": config.END_DATE,
         "data_path": config.DATA_PATH,
         "sequence": config.SEQUENCE,
-        "tickers": config.TICKERS,
-        "test_env": False
+        "tickers": config.TICKERS
     }
 
     env_kwargs_test = env_kwargs.copy()
     env_kwargs_test["start_date"] = '2019-01-02'
     env_kwargs_test["end_date"] = '2021-08-01'
-    env_kwargs_test["test_env"] = True
 
     env = StockTradingEnv(**env_kwargs)
 

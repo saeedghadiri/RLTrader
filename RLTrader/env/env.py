@@ -34,8 +34,7 @@ class StockTradingEnv(gym.Env):
                  data_path,
                  tickers,
                  print_verbosity=10,
-                 model_name='',
-                 test_env=False):
+                 model_name=''):
 
         self.stock_dim = stock_dim
 
@@ -43,7 +42,6 @@ class StockTradingEnv(gym.Env):
         self.reward_scaling = reward_scaling
         self.state_dim = state_dim
         self.action_dim = action_dim
-        self.test_env = test_env
 
         if type(start_date) is str:
             start_date = datetime.strptime(start_date, '%Y-%m-%d')
@@ -127,7 +125,7 @@ class StockTradingEnv(gym.Env):
 
         # self.reward = np.log((asset / self.asset)) * self.reward_scaling
 
-        self.reward = self.reward - 1 * (1 - entropy(actions) / np.log(len(actions)))
+        self.reward = self.reward - 0.5 * (1 - entropy(actions) / np.log(len(actions)))
 
         self.asset = asset
         self.portfo = actions
@@ -138,24 +136,21 @@ class StockTradingEnv(gym.Env):
         self.asset_memory.append(asset)
         self.date_memory.append(self._get_date())
         self.rewards_memory.append(self.reward)
-        if self.terminal:
-            # print(f"Episode: {self.episode}")
-            self._terminal_result()
 
         return self.state, self.reward, self.terminal, {}
 
-    def reset(self):
+    def reset(self, random_start=False):
 
         self.asset = self.initial_asset
         self.asset_memory = [self.asset]
 
         self.total_days = len(self.df.index.unique()) - 1
-        if self.test_env:
-            self.day = 0
-            self.stop_day = self.total_days
-        else:
+        if random_start:
             self.day = np.random.randint(0, self.total_days - 100)
             self.stop_day = self.day + 100
+        else:
+            self.day = 0
+            self.stop_day = self.total_days
 
         self.df_today = self.df.loc[self.day, :]
         self.cost = 0
@@ -175,42 +170,6 @@ class StockTradingEnv(gym.Env):
 
     def render(self, mode='human', close=False):
         return self.state
-
-    def _terminal_result(self):
-
-        df_total_asset = pd.DataFrame(self.asset_memory)
-        df_total_asset.columns = ['account_value']
-        df_total_asset['date'] = self.date_memory
-        df_total_asset['daily_return'] = df_total_asset['account_value'].pct_change(1)
-        if df_total_asset['daily_return'].std() != 0:
-            sharpe = (252 ** 0.5) * df_total_asset['daily_return'].mean() / \
-                     df_total_asset['daily_return'].std()
-        df_rewards = pd.DataFrame(self.rewards_memory)
-        df_rewards.columns = ['account_rewards']
-        df_rewards['date'] = self.date_memory[:-1]
-        if self.episode % self.print_verbosity == 0 and self.test_env:
-            print(f"day: {self.day}, episode: {self.episode}")
-            print(f"begin_total_asset: {self.asset_memory[0]:0.2f}")
-            print(f"end_total_asset: {self.asset_memory[-1]:0.2f}")
-            print(f"total_reward: {np.sum(self.rewards_memory):0.2f}")
-            # print(f"total_cost: {self.cost:0.2f}")
-            # print(f"total_trades: {self.trades}")
-            if df_total_asset['daily_return'].std() != 0:
-                print(f"Sharpe: {sharpe:0.3f}")
-            print("=================================")
-
-        if self.model_name != '':
-            df_actions = self.save_action_memory()
-            df_actions.to_csv('results/actions_{}.csv'.format(self.model_name))
-            df_total_asset.to_csv(
-                'results/asset_value_{}.csv'.format(self.model_name),
-                index=False)
-            df_rewards.to_csv(
-                'results/rewards_{}.csv'.format(self.model_name),
-                index=False)
-            plt.plot(self.asset_memory, 'r')
-            plt.savefig('results/asset_value_{}_{}.png'.format(self.model_name, self.episode))
-            plt.clf()
 
     def _initiate_portfo(self):
         self.portfo = np.random.rand(self.action_dim)

@@ -341,7 +341,7 @@ class Agent:
         # run iteration
 
         for ep in range(TOTAL_EPISODES):
-            prev_state = self.env.reset()
+            prev_state = self.env.reset(random_start=True)
             done = False
 
             while not done:
