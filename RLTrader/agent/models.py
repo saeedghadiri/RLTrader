@@ -17,7 +17,7 @@ from RLTrader.apps.rltrader.config import KERNEL_INITIALIZER, GAMMA, RHO, STD_NO
 sns.set_style('darkgrid')
 
 
-def ActorNetwork(state_space, num_actions):
+def LSTMActorNetwork(state_space, num_actions):
     """
     Get Actor Network with the given parameters.
     Args:
@@ -47,7 +47,7 @@ def ActorNetwork(state_space, num_actions):
     return model
 
 
-def CriticNetwork(state_space, num_actions):
+def LSTMCriticNetwork(state_space, num_actions):
     """
     Get Critic Network with the given parameters.
     Args:
@@ -93,6 +93,67 @@ def CriticNetwork(state_space, num_actions):
     return model
 
 
+def CNNActorNetwork(state_space, num_actions):
+    n_sequence = state_space[0][0]
+    inputs_market = tf.keras.layers.Input(shape=state_space[0], dtype=tf.float32)
+
+    out_market = tf.keras.layers.Conv2D(filters=2, activation='relu', kernel_size=(1, 3), strides=(1, 1),
+                                        padding='same')(inputs_market)
+    out_market = tf.keras.layers.Conv2D(filters=20, activation='relu', kernel_size=(1, n_sequence - 2),
+                                        strides=(n_sequence, 1), padding='same')(out_market)
+
+    inputs_portfo = tf.keras.layers.Input(shape=state_space[1], dtype=tf.float32)
+    out_portfo = tf.keras.layers.Reshape((1, state_space[1][0], 1))(inputs_portfo)
+
+    out = tf.keras.layers.Concatenate(axis=3)([out_portfo, out_market])
+
+    out = tf.keras.layers.Conv2D(filters=1, activation='relu', kernel_size=(1, 1), strides=(1, 1),
+                                 padding='same')(out)
+    out = tf.keras.layers.Flatten()(out)
+
+    cash_bias = tf.Variable([[0.]], shape=[1, 1], name='cash_bias', dtype=tf.float32, trainable=False)
+    cash_bias = tf.keras.layers.Dense(1)(cash_bias)
+    cash_bias = tf.tile(cash_bias, [tf.shape(inputs_market)[0], 1])
+
+    out = tf.keras.layers.Concatenate()([out, cash_bias])
+    outputs = tf.keras.activations.softmax(out)
+
+    model = tf.keras.Model([inputs_market, inputs_portfo], outputs)
+    model.summary()
+    return model
+
+
+def CNNCriticNetwork(state_space, num_actions):
+    n_sequence = state_space[0][0]
+    inputs_market = tf.keras.layers.Input(shape=state_space[0], dtype=tf.float32)
+
+    out_market = tf.keras.layers.Conv2D(filters=2, activation='relu', kernel_size=(1, 3), strides=(1, 1),
+                                        padding='same')(inputs_market)
+    out_market = tf.keras.layers.Conv2D(filters=20, activation='relu', kernel_size=(1, n_sequence - 2),
+                                        strides=(n_sequence, 1), padding='same')(out_market)
+
+    inputs_portfo = tf.keras.layers.Input(shape=state_space[1], dtype=tf.float32)
+    out_portfo = tf.keras.layers.Reshape((1, state_space[1][0], 1))(inputs_portfo)
+
+    out = tf.keras.layers.Concatenate(axis=3)([out_portfo, out_market])
+
+    out = tf.keras.layers.Conv2D(filters=1, activation='relu', kernel_size=(1, 1), strides=(1, 1),
+                                 padding='same')(out)
+    out = tf.keras.layers.Flatten()(out)
+
+    action_input = tf.keras.layers.Input(shape=(num_actions), dtype=tf.float32)
+
+    outs = tf.keras.layers.Concatenate()([out, action_input])
+
+    outputs = tf.keras.layers.Dense(1)(outs)
+
+    # Outputs single value for give state-action
+    model = tf.keras.Model([inputs_market, inputs_portfo, action_input], outputs)
+
+    model.summary()
+    return model
+
+
 def update_target(model_target, model_ref, rho=0):
     """
     Update target's weights with the given model reference
@@ -111,16 +172,22 @@ class Brain:
     The Brain that contains all the models
     """
 
-    def __init__(self, state_space, action_space, gamma=GAMMA, rho=RHO,
+    def __init__(self, state_space, action_space, dnn_type, gamma=GAMMA, rho=RHO,
                  std_noise=STD_NOISE):
 
         state_space = [state_space['market'].shape, state_space['portfo'].shape]
         num_actions = action_space.shape[0]
         # initialize everything
-        self.actor_network = ActorNetwork(state_space, num_actions)
-        self.critic_network = CriticNetwork(state_space, num_actions)
-        self.actor_target = ActorNetwork(state_space, num_actions)
-        self.critic_target = CriticNetwork(state_space, num_actions)
+        if dnn_type == 'LSTM':
+            self.actor_network = LSTMActorNetwork(state_space, num_actions)
+            self.critic_network = LSTMCriticNetwork(state_space, num_actions)
+            self.actor_target = LSTMActorNetwork(state_space, num_actions)
+            self.critic_target = LSTMCriticNetwork(state_space, num_actions)
+        elif dnn_type == 'CNN':
+            self.actor_network = CNNActorNetwork(state_space, num_actions)
+            self.critic_network = CNNCriticNetwork(state_space, num_actions)
+            self.actor_target = CNNActorNetwork(state_space, num_actions)
+            self.critic_target = CNNCriticNetwork(state_space, num_actions)
 
         # Making the weights equal initially
         self.actor_target.set_weights(self.actor_network.get_weights())
@@ -131,7 +198,7 @@ class Brain:
         self.rho = rho
 
         self.num_actions = num_actions
-        self.std_noise = STD_NOISE
+        self.std_noise = std_noise
 
         # optimizers
         self.critic_optimizer = tf.keras.optimizers.Adam(CRITIC_LR, amsgrad=True)
@@ -251,10 +318,11 @@ class Brain:
 
 
 class Agent:
-    def __init__(self, env, env_test):
-        self.brain = Brain(env.observation_space, env.action_space)
+    def __init__(self, env, env_test, dnn_type):
+        self.brain = Brain(env.observation_space, env.action_space, dnn_type)
         self.env = env
         self.env_test = env_test
+        self.dnn_type = dnn_type
 
     def learn(self):
 

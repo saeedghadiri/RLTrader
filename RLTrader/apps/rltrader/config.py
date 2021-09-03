@@ -1,9 +1,11 @@
 from tensorflow.keras.initializers import glorot_normal
 
+DNN_TYPE = 'CNN'
 TICKERS_GROUP = 'DOW4'
 START_DATE = '2015-01-01'
 END_DATE = '2019-01-01'
 SEQUENCE = 10
+features = ['high_price', 'low_price', 'close_price']
 # general parameters
 CHECKPOINTS_PATH = "checkpoints/DDPG_"
 TF_LOG_DIR = './logs/DDPG/'

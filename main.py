@@ -11,16 +11,19 @@ from datetime import datetime
 import logging
 from RLTrader.agent.utils import Tensorboard
 
-features = ['high_price', 'low_price', 'close_price']
-
 if __name__ == '__main__':
+    if config.DNN_TYPE == 'LSTM':
+        state_dim = (config.SEQUENCE, len(config.TICKERS) * len(config.features))
+    elif config.DNN_TYPE == 'CNN':
+        state_dim = (config.SEQUENCE, len(config.TICKERS), len(config.features))
+
     env_kwargs = {
 
         "initial_asset": 1000000,
         "stock_dim": len(config.TICKERS),
-        "state_dim": (config.SEQUENCE, len(features) * len(config.TICKERS)),
+        "state_dim": state_dim,
         "action_dim": len(config.TICKERS) + 1,
-        "features": features,
+        "features": config.features,
         "reward_scaling": 1000,
         "start_date": config.START_DATE,
         "end_date": config.END_DATE,
@@ -38,5 +41,5 @@ if __name__ == '__main__':
     env = StockTradingEnv(**env_kwargs)
 
     env_test = StockTradingEnv(**env_kwargs_test)
-    agent = Agent(env, env_test)
+    agent = Agent(env, env_test, config.DNN_TYPE)
     agent.learn()

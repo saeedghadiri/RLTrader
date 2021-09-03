@@ -81,7 +81,7 @@ class StockTradingEnv(gym.Env):
         self.data = data
 
         self.observation_space = spaces.Dict({"market": spaces.Box(low=0, high=np.inf, shape=self.state_dim),
-                                              'portfo': spaces.Box(low=0, high=1, shape=(self.action_dim,))})
+                                              'portfo': spaces.Box(low=0, high=1, shape=(self.action_dim - 1,))})
         self.action_space = spaces.Box(low=0, high=1, shape=(self.action_dim,))
 
         self.print_verbosity = print_verbosity
@@ -222,8 +222,12 @@ class StockTradingEnv(gym.Env):
         d_data = self.data[ind, :]
 
         # for lstm
-        d_data = d_data.transpose(1, 0, 2).reshape(d_data.shape[1], -1)
-        portfo = np.array(self.portfo)
+        if len(self.state_dim) == 2:
+            d_data = d_data.transpose(1, 0, 2).reshape(d_data.shape[1], -1)
+        # for CNN
+        elif len(self.state_dim) == 3:
+            d_data = d_data.transpose(1, 0, 2)
+        portfo = np.array(self.portfo[:-1])
 
         # d_data = d_data[np.newaxis, ...]
         # portfo = portfo[np.newaxis, ...]
