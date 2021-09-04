@@ -5,7 +5,6 @@ import numpy as np
 import tensorflow as tf
 import random
 import gym
-from tqdm import trange
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -13,7 +12,7 @@ from RLTrader.agent.buffer import ReplayBuffer
 from RLTrader.agent.utils import OUActionNoise, Tensorboard
 from RLTrader.apps.rltrader.config import KERNEL_INITIALIZER, GAMMA, RHO, STD_NOISE, BUFFER_SIZE, BATCH_SIZE, CRITIC_LR, \
     ACTOR_LR, TF_LOG_DIR, CHECKPOINTS_PATH, TOTAL_EPISODES, UNBALANCE_P, RENDER_ENV, SAVE_WEIGHTS, LOAD_LAST, EPS_GREEDY
-
+from tqdm import tqdm
 sns.set_style('darkgrid')
 
 
@@ -102,21 +101,18 @@ def CNNActorNetwork(state_space, num_actions):
     out_market = tf.keras.layers.Conv2D(filters=20, activation='relu', kernel_size=(1, n_sequence - 2),
                                         strides=(n_sequence, 1), padding='same')(out_market)
 
+    outs = tf.keras.layers.Flatten()(out_market)
+
     inputs_portfo = tf.keras.layers.Input(shape=state_space[1], dtype=tf.float32)
-    out_portfo = tf.keras.layers.Reshape((1, state_space[1][0], 1))(inputs_portfo)
 
-    out = tf.keras.layers.Concatenate(axis=3)([out_portfo, out_market])
+    outs = tf.keras.layers.Concatenate(axis=1)([outs, inputs_portfo])
 
-    out = tf.keras.layers.Conv2D(filters=1, activation='relu', kernel_size=(1, 1), strides=(1, 1),
-                                 padding='same')(out)
-    out = tf.keras.layers.Flatten()(out)
+    outs = tf.keras.layers.Dense(40)(outs)
+    outs = tf.keras.layers.BatchNormalization()(outs)
+    outs = tf.keras.activations.relu(outs)
 
-    cash_bias = tf.Variable([[0.]], shape=[1, 1], name='cash_bias', dtype=tf.float32, trainable=False)
-    cash_bias = tf.keras.layers.Dense(1)(cash_bias)
-    cash_bias = tf.tile(cash_bias, [tf.shape(inputs_market)[0], 1])
-
-    out = tf.keras.layers.Concatenate()([out, cash_bias])
-    outputs = tf.keras.activations.softmax(out)
+    outs = tf.keras.layers.Dense(50)(outs)
+    outputs = tf.keras.layers.Dense(num_actions, activation='softmax')(outs)
 
     model = tf.keras.Model([inputs_market, inputs_portfo], outputs)
     model.summary()
@@ -124,6 +120,7 @@ def CNNActorNetwork(state_space, num_actions):
 
 
 def CNNCriticNetwork(state_space, num_actions):
+
     n_sequence = state_space[0][0]
     inputs_market = tf.keras.layers.Input(shape=state_space[0], dtype=tf.float32)
 
@@ -132,23 +129,22 @@ def CNNCriticNetwork(state_space, num_actions):
     out_market = tf.keras.layers.Conv2D(filters=20, activation='relu', kernel_size=(1, n_sequence - 2),
                                         strides=(n_sequence, 1), padding='same')(out_market)
 
+    outs = tf.keras.layers.Flatten()(out_market)
+
     inputs_portfo = tf.keras.layers.Input(shape=state_space[1], dtype=tf.float32)
-    out_portfo = tf.keras.layers.Reshape((1, state_space[1][0], 1))(inputs_portfo)
+    inputs_action = tf.keras.layers.Input(shape=(num_actions), dtype=tf.float32)
 
-    out = tf.keras.layers.Concatenate(axis=3)([out_portfo, out_market])
+    outs = tf.keras.layers.Concatenate(axis=1)([outs, inputs_portfo, inputs_action])
 
-    out = tf.keras.layers.Conv2D(filters=1, activation='relu', kernel_size=(1, 1), strides=(1, 1),
-                                 padding='same')(out)
-    out = tf.keras.layers.Flatten()(out)
+    outs = tf.keras.layers.Dense(40)(outs)
+    outs = tf.keras.layers.BatchNormalization()(outs)
+    outs = tf.keras.activations.relu(outs)
 
-    action_input = tf.keras.layers.Input(shape=(num_actions), dtype=tf.float32)
-
-    outs = tf.keras.layers.Concatenate()([out, action_input])
-
+    outs = tf.keras.layers.Dense(50)(outs)
     outputs = tf.keras.layers.Dense(1)(outs)
 
     # Outputs single value for give state-action
-    model = tf.keras.Model([inputs_market, inputs_portfo, action_input], outputs)
+    model = tf.keras.Model([inputs_market, inputs_portfo, inputs_action], outputs)
 
     model.summary()
     return model
@@ -340,7 +336,7 @@ class Agent:
 
         # run iteration
 
-        for ep in range(TOTAL_EPISODES):
+        for ep in tqdm(range(TOTAL_EPISODES)):
             prev_state = self.env.reset(random_start=True)
             done = False
 
