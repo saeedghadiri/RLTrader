@@ -7,5 +7,6 @@ Install Dependencies via `pip install -r requirements.txt`
 Version 1 under development.
 
 Implemented Agents:
-1. ddpg
+1. LSTM ddpg
+2. CNN ddpg
 
