@@ -24,7 +24,7 @@ if __name__ == '__main__':
         "state_dim": state_dim,
         "action_dim": len(config.TICKERS) + 1,
         "features": config.features,
-        "reward_scaling": 1000,
+        "reward_scaling": 100,
         "start_date": config.START_DATE,
         "end_date": config.END_DATE,
         "data_path": config.DATA_PATH,

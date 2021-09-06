@@ -96,10 +96,12 @@ def CNNActorNetwork(state_space, num_actions):
     n_sequence = state_space[0][0]
     inputs_market = tf.keras.layers.Input(shape=state_space[0], dtype=tf.float32)
 
-    out_market = tf.keras.layers.Conv2D(filters=2, activation='relu', kernel_size=(1, 3), strides=(1, 1),
+    out_market = tf.keras.layers.Conv2D(filters=5, activation='relu', kernel_size=(1, 3), strides=(1, 1),
                                         padding='same')(inputs_market)
-    out_market = tf.keras.layers.Conv2D(filters=20, activation='relu', kernel_size=(1, n_sequence - 2),
-                                        strides=(n_sequence, 1), padding='same')(out_market)
+    out_market = tf.keras.layers.MaxPooling2D(pool_size=(3, 1), padding='same')(out_market)
+
+    out_market = tf.keras.layers.Conv2D(filters=8, activation='relu', kernel_size=(1, 3), padding='same')(out_market)
+    out_market = tf.keras.layers.MaxPooling2D(pool_size=(3, 1), padding='same')(out_market)
 
     outs = tf.keras.layers.Flatten()(out_market)
 
@@ -107,7 +109,7 @@ def CNNActorNetwork(state_space, num_actions):
 
     outs = tf.keras.layers.Concatenate(axis=1)([outs, inputs_portfo])
 
-    outs = tf.keras.layers.Dense(40)(outs)
+    outs = tf.keras.layers.Dense(30)(outs)
     outs = tf.keras.layers.BatchNormalization()(outs)
     outs = tf.keras.activations.relu(outs)
 
@@ -124,10 +126,12 @@ def CNNCriticNetwork(state_space, num_actions):
     n_sequence = state_space[0][0]
     inputs_market = tf.keras.layers.Input(shape=state_space[0], dtype=tf.float32)
 
-    out_market = tf.keras.layers.Conv2D(filters=2, activation='relu', kernel_size=(1, 3), strides=(1, 1),
+    out_market = tf.keras.layers.Conv2D(filters=5, activation='relu', kernel_size=(1, 3), strides=(1, 1),
                                         padding='same')(inputs_market)
-    out_market = tf.keras.layers.Conv2D(filters=20, activation='relu', kernel_size=(1, n_sequence - 2),
-                                        strides=(n_sequence, 1), padding='same')(out_market)
+    out_market = tf.keras.layers.MaxPooling2D(pool_size=(3, 1), padding='same')(out_market)
+
+    out_market = tf.keras.layers.Conv2D(filters=8, activation='relu', kernel_size=(1, 3), padding='same')(out_market)
+    out_market = tf.keras.layers.MaxPooling2D(pool_size=(3, 1), padding='same')(out_market)
 
     outs = tf.keras.layers.Flatten()(out_market)
 
@@ -136,7 +140,7 @@ def CNNCriticNetwork(state_space, num_actions):
 
     outs = tf.keras.layers.Concatenate(axis=1)([outs, inputs_portfo, inputs_action])
 
-    outs = tf.keras.layers.Dense(40)(outs)
+    outs = tf.keras.layers.Dense(30)(outs)
     outs = tf.keras.layers.BatchNormalization()(outs)
     outs = tf.keras.activations.relu(outs)
 
